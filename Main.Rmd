@@ -4,6 +4,7 @@ author: "Manvik Sreedath 20BCE1479"
 date: "2023-03-19"
 output: html_document
 ---
+
 ```{r}
 df=read.csv("credit_card_churn.csv")
 
@@ -79,6 +80,7 @@ Splitting Data
 ```{r}
 library(caTools)
 set.seed(123321)
+df[sapply(df, is.character)] <- lapply(df[sapply(df, is.character)], as.factor)
 split=sample.split(df,SplitRatio = 0.8)
 train=subset(df,split=="TRUE")
 test=subset(df,split=="FALSE")
@@ -133,12 +135,16 @@ table(test$Attrition_Flag,predicted)
 classerr=mean(predicted!=test$Attrition_Flag)
 paste("Accuracy is ",1-classerr)
 ```
+
+
+
+
 <h3> Decision Tree</h3>
 ```{r}
 library(party)
 #train[sapply(train, is.character)] <- lapply(train[sapply(train, is.character)], as.factor)
 #test[sapply(test, is.character)] <- lapply(test[sapply(test, is.character)], as.factor)
-classifier_cl <- ctree(Attrition_Flag~Customer_Age+Dependent_count+Months_on_book+Total_Relationship_Count+Months_Inactive_12_mon+Contacts_Count_12_mon+Credit_Limit+Total_Revolving_Bal+Avg_Open_To_Buy+Total_Amt_Chng_Q4_Q1+Total_Trans_Amt+Total_Trans_Ct+Total_Ct_Chng_Q4_Q1+Avg_Utilization_Ratio,data=train)
+classifier_cl <- ctree(Attrition_Flag~.,data=train)
 
 #Fitting Decision Tree Model to training dataset
 plot(classifier_cl)
