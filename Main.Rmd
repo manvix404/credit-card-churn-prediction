@@ -84,6 +84,38 @@ train=subset(df,split=="TRUE")
 test=subset(df,split=="FALSE")
 head(train)
 ```
+<h3>XGBoost</h3>
+```{r}
+library(xgboost)
+library(pROC)
+# Convert data to DMatrix format and using most important features
+dtrain <- xgb.DMatrix(data = as.matrix(train[,c(11,15,17:20)]), label = train$Attrition_Flag)
+dtest <- xgb.DMatrix(data = as.matrix(test[,c(11,15,17:20)]), label = test$Attrition_Flag)
+
+# Define parameters for XGBoost model
+params <- list(
+  objective = "binary:logistic",
+  eval_metric = "auc",
+  min_child_weight = 1,
+  max_depth = 6,
+  eta = 0.1,
+  subsample = 0.8,
+  colsample_bytree = 0.7
+)
+
+# Train XGBoost model
+model <- xgb.train(
+  params = params,
+  data = dtrain,
+  nrounds = 1000,
+  verbose = FALSE
+)
+
+predictions <- predict(model, dtest)
+binary.predictions <- ifelse(predictions > 0.5, 1, 0)
+accuracy <- sum(binary.predictions == test$Attrition_Flag) /  length(test$Attrition_Flag)
+print(paste("Accuracy = ",accuracy))
+```
 <h3>Logistic Regression</h3>
 ```{r}
 
@@ -125,4 +157,36 @@ cm
 accuracy = mean(y_pred!=test$Attrition_Flag)
 accuracy = 1 - accuracy
 print(paste('Accuracy of the model = ',accuracy))
+```
+<h3>Random Forest</h3>
+```{r}
+library(randomForest)
+set.seed(123321)
+model_rf=randomForest(x=train[-c(1,2)],y=train$Attrition_Flag,ntree=500)
+model_rf
+
+# Predicting the Test set results
+y_pred = predict(model_rf, newdata = test[-c(1,2)])
+# Confusion Matrix
+confusion_mtx = table(test[, 2], y_pred)
+#confusion_mtx
+
+# Plotting model
+plot(model_rf)
+  
+# Importance plot
+importance(model_rf)
+```
+<h3>AdaBoost </h3>
+```{r}
+library(adabag)
+train$Attrition_Flag=as.factor(train$Attrition_Flag)
+model_adaboost <- boosting(Attrition_Flag~., data=train, boos=TRUE, mfinal=50)
+summary(model_adaboost)
+
+#Make Predictions
+pred_test=predict(model_adaboost,test)
+cm <- confusionMatrix(as.factor(pred_test$class), as.factor(test$Attrition_Flag))
+accuracy <- cm$overall[1]
+print(paste("Accuracy: ", round(accuracy * 100, 2), "%"))
 ```
