@@ -167,12 +167,14 @@ print(paste('Accuracy of the model = ',accuracy))
 <h3>Random Forest</h3>
 ```{r}
 library(randomForest)
+
 set.seed(123321)
 model_rf=randomForest(x=train[-c(1,2)],y=train$Attrition_Flag,ntree=500)
 model_rf
 
 # Predicting the Test set results
 y_pred = predict(model_rf, newdata = test[-c(1,2)])
+
 # Confusion Matrix
 confusion_mtx = table(test[, 2], y_pred)
 #confusion_mtx
