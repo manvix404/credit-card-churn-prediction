@@ -37,19 +37,15 @@ It can be considered as the case of imbalanced dataset<br>
 
 <h4>Distribution</h4>
 ```{r}
-cont_cols <- names(df)[sapply(df, is.numeric)]
-
-#Removing CLIENTNUM field
-cont_cols = cont_cols[-1]
-
-for (i in cont_cols) {
-  print(ggplot(df, aes(x = i)) +
-    geom_bar() +
-    labs(title = paste("Distribution of data for", i)) +
-    theme_minimal() +
-    theme(plot.title = element_text(size = 20, face = "bold")))
+for (col in colnames(df)) {
+  if (is.numeric(df[[col]])) {
+    hist(df[[col]], main = col)
+  } else {
+    barplot(table(df[[col]]), main = col)
+  }
 }
 ```
+
 Outliers In Customer Age
 ```{r}
 boxplot(df['Customer_Age'])
@@ -117,6 +113,17 @@ predictions <- predict(model, dtest)
 binary.predictions <- ifelse(predictions > 0.5, 1, 0)
 accuracy <- sum(binary.predictions == test$Attrition_Flag) /  length(test$Attrition_Flag)
 print(paste("Accuracy = ",accuracy))
+
+# Generate predicted probabilities
+y_pred_prob <- predict(model, dtest)
+
+# Compute ROC and AUC
+roc_obj <- roc(test$Attrition_Flag, y_pred_prob)
+
+auc_val <- auc(roc_obj)
+
+# Plot ROC curve
+plot(roc_obj, main = paste("ROC Curve (AUC = ", round(auc_val, 3), ")"))
 ```
 <h3>Logistic Regression</h3>
 ```{r}
@@ -134,6 +141,11 @@ head(predicted)
 table(test$Attrition_Flag,predicted)
 classerr=mean(predicted!=test$Attrition_Flag)
 paste("Accuracy is ",1-classerr)
+
+#ROC AUC curve
+library(pROC)
+roc_obj <- roc(test$Attrition_Flag, predicted)
+plot(roc_obj, main = "ROC Curve", col = "blue", lwd = 2, print.auc = TRUE)
 ```
 
 
@@ -142,9 +154,7 @@ paste("Accuracy is ",1-classerr)
 <h3> Decision Tree</h3>
 ```{r}
 library(party)
-#train[sapply(train, is.character)] <- lapply(train[sapply(train, is.character)], as.factor)
-#test[sapply(test, is.character)] <- lapply(test[sapply(test, is.character)], as.factor)
-classifier_cl <- ctree(Attrition_Flag~.,data=train)
+classifier_cl <- ctree(as.factor(Attrition_Flag)~.,data=train)
 
 #Fitting Decision Tree Model to training dataset
 plot(classifier_cl)
@@ -169,7 +179,7 @@ print(paste('Accuracy of the model = ',accuracy))
 library(randomForest)
 
 set.seed(123321)
-model_rf=randomForest(x=train[-c(1,2)],y=train$Attrition_Flag,ntree=500)
+model_rf=randomForest(x=train[-c(1,2)],y=as.factor(train$Attrition_Flag),ntree=500)
 model_rf
 
 # Predicting the Test set results
@@ -179,11 +189,27 @@ y_pred = predict(model_rf, newdata = test[-c(1,2)])
 confusion_mtx = table(test[, 2], y_pred)
 #confusion_mtx
 
+# Compute accuracy
+accuracy = mean(y_pred == test$Attrition_Flag)
+print(paste("Accuracy: ", round(accuracy * 100, 2), "%"))
+
 # Plotting model
 plot(model_rf)
   
 # Importance plot
 importance(model_rf)
+
+# Predict on test data with class probabilities
+y_pred_prob <- predict(model_rf, newdata = test[-c(1,2)], type = "prob")[, 2]
+
+# Compute ROC and AUC
+library(pROC)
+roc_obj <- roc(test$Attrition_Flag, y_pred_prob)
+
+auc_val <- auc(roc_obj)
+
+# Plot ROC curve
+plot(roc_obj, main = paste("ROC Curve (AUC = ", round(auc_val, 3), ")"))
 ```
 <h3>AdaBoost </h3>
 ```{r}
@@ -197,4 +223,11 @@ pred_test=predict(model_adaboost,test)
 cm <- confusionMatrix(as.factor(pred_test$class), as.factor(test$Attrition_Flag))
 accuracy <- cm$overall[1]
 print(paste("Accuracy: ", round(accuracy * 100, 2), "%"))
+
+# Compute ROC and AUC
+roc_obj = roc(test$Attrition_Flag, pred_test$prob[, 2])
+auc_val = auc(roc_obj)
+
+# Plot ROC curve
+plot(roc_obj, main = paste("ROC Curve (AUC = ", round(auc_val, 3), ")"))
 ```
