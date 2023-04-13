@@ -1,6 +1,6 @@
 ---
 title: "Main"
-author: "Manvik Sreedath 20BCE1479"
+author: "Manvik Sreedath, KarthikRaj R, Aryan Vigyat, Kartik Deepu"
 date: "2023-03-19"
 output: html_document
 ---
